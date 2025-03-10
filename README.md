@@ -1,4 +1,4 @@
-# AMBIENTE DESENVOLVIMENTO PHP COM DOCKER
+# AMBIENTE LARAVEL(php) COM DOCKER
 Passos para criar container de ambiente de desenvolvimento php
 
 ## Servidor Web (Nginx vs Apache):
