@@ -251,10 +251,10 @@ php artisan serve
 
 Agora você tem: 
 
-✅ Laravel rodando em PHP 7.2 e 8.2
-✅ Nginx servindo ambas as versões
-✅ PostgreSQL armazenando os dados
-✅ Vue.js rodando no frontend
+* ✅ Laravel rodando em PHP 7.2 e 8.2
+* ✅ Nginx servindo ambas as versões
+* ✅ PostgreSQL armazenando os dados
+* ✅ Vue.js rodando no frontend
 
 
 
