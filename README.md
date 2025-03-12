@@ -121,7 +121,6 @@ services:
 
 volumes:
   postgres_data:
-
 networks:
   app_network:
     driver: bridge
@@ -269,6 +268,79 @@ Agora você tem:
 * ✅ Nginx servindo ambas as versões
 * ✅ PostgreSQL armazenando os dados
 * ✅ Vue.js rodando no frontend
+
+# ALGUNS COMANDOS DOKER
+
+Faça login em um registro (como o Docker Hub) a partir do CLI. Isso salva credenciais localmente.
+```
+docker login
+docker login -u myusername
+```
+
+### Para Docker Hub
+```
+docker push myuser/myimage:v1   # Enviar imagem personalizada para Docker Hub
+docker pull someimage           # Puxar imagem compartilhada
+docker images                   # Listar imagens baixadas
+docker rmi <image>              # Remover/apagar imagem
+```
+
+### No Docker
+```
+docker version
+docker --help
+```
+
+```
+docker run        # Iniciar novo contêiner a partir da imagem
+docker ps         # Listar contêineres em execução
+docker logs       # Imprimir logs do contêiner
+docker stop       # Parar de executar o contêiner
+docker rm         # Remover/excluir contêiner
+```
+
+Cria uma imagem Docker lendo instruções de construção de um Dockerfile.
+```
+docker build                         # Construir imagem a partir do Dockerfile
+docker build --platform=linux/amd64  # Construir para arquitetura específica
+```
+
+Cria um volume persistente e gerenciado que pode sobreviver aos contêineres. docker run -v- Monta um volume em um contêiner 
+específico para permitir a persistência de dados após o ciclo de vida do contêiner.
+```
+docker volume create         # Criar volume
+docker run -v <vol>:/data    # Montar volume no contêiner
+```
+
+Cria uma rede virtual personalizada para comunicação de contêineres. docker run --network=<name>- Conecta um contêiner em 
+execução a uma rede definida pelo usuário do Docker.
+```
+docker network create           # Criar rede definida pelo usuário
+docker run --network=<name>     # Conectar contêiner
+```
+
+Executa um comando em um contêiner já em execução. Útil para depurar/inspecionar contêineres:
+```
+docker exec
+docker exec mycontainer ls -l /etc     # Listar arquivos no contêiner
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
