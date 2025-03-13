@@ -47,7 +47,7 @@ Desvantagens:
 * Maior número de arquivos para gerenciar.
 
 # Abordagem 1: Um docker-compose.yml por cliente
-#### Estrutura de Pastas
+#### Estrutura de pastas para dockerizar projetos
 ```
 meus_projetos_docker/
 │── clientA/
