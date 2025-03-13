@@ -27,140 +27,421 @@ Crie uma pasta para o seu ambiente de desenvolvimento:
 ```
 mkdir meu_projeto_docker
 cd meu_projeto_docker
+```
 Dentro dessa pasta, vamos organizar os arquivos:
+
+# Um docker-compose.yml por cliente (Recomendado para isolamento total)
+Cada cliente tem seu próprio docker-compose.yml, o que garante que os ambientes sejam completamente isolados e independentes. Isso é útil quando:
+
+* Cada cliente tem requisitos específicos (versões diferentes de PHP, banco de dados, etc.).
+* Você precisa rodar os projetos de clientes diferentes simultaneamente.
+* Você quer evitar conflitos de portas, redes ou volumes.
+
+Vantagens:
+* Isolamento total entre clientes.
+* Fácil de gerenciar individualmente.
+* Menos risco de conflitos de configuração.
+
+Desvantagens:
+* Pode haver redundância de configurações (por exemplo, se vários clientes usam a mesma versão do PHP ou Nginx).
+* Maior número de arquivos para gerenciar.
+
+# Abordagem 1: Um docker-compose.yml por cliente
+#### Estrutura de Pastas
+```
+meus_projetos_docker/
+│── clientA/
+|   docker-compose.yml
+|   │── frontend/
+|     Dockerfile
+|     nginx.conf
+|     │── src/
+|   │── backend/
+|     Dockerfile
+|     │── src/
+|   │── nginx/
+|     Dockerfile
+|     nginx.conf
+|   │── postgres/
+|     Dockerfile
+|     init.sql
+|-----------------------
+│── clientB/
+|   docker-compose.yml
+|   │── frontend/
+|     Dockerfile
+|     │── src/
+|   │── backend/
+|     Dockerfile
+|     │── src/
+|   │── nginx/
+|     Dockerfile
+|     nginx.conf
+|   │── postgres/
+|     Dockerfile
+|     init.sql
 ```
 
-#### bash
-```
-meu_projeto_docker/
-│── laravel_php72/         # Laravel rodando em PHP 7.2
-│── laravel_php82/         # Laravel rodando em PHP 8.2
-│── vue_frontend/          # Projeto Vue.js
-│── docker/
-│   ├── php72/             # Configuração do PHP 7.2
-│   ├── php82/             # Configuração do PHP 8.2             
-│   ├── postgres/          # Configuração do PostgreSQL (ou MySQL)
-│── docker-compose.yml     # Arquivo principal do Docker Compose
-|── nginx/                 # Configuração do Nginx
-```
-
-# Passo 2: Criar o `docker-compose.yml`
+# Passo 2: Criar o `docker-compose.yml` para ClientA
 Este arquivo define todos os serviços (containers) que vamos rodar.
 
 Crie um arquivo `docker-compose.yml` na raiz do projeto:
 
 ```
-version: '3.9'
+version: '3.8'
 
 services:
-  nginx:
-    image: nginx:latest
-    container_name: nginx_server
+  frontend:
+    build: ./frontend
     ports:
-      - "8080:80"
+      - "8081:80"  # Porta exposta para o frontend
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/conf.d/nginx.conf:ro        
-      - ./lara-7.2:/var/www/lara-7.2
-      - ./lara-8.2:/var/www/lara-8.2
+      - ./frontend/src:/app/src  # Mapeia o código do frontend
+    networks:
+      - clientA_network
+
+  backend:
+    build: ./backend
+    volumes:
+      - ./backend/src:/var/www/html  # Mapeia o código do backend
+    environment:
+      DB_HOST: postgres
+      DB_DATABASE: clientA_db
+      DB_USERNAME: user
+      DB_PASSWORD: password
+    networks:
+      - clientA_network
     depends_on:
-      - php72
-      - php82
-    networks:
-      - app_network
+      - postgres
 
-  php72:
-    build:
-      context: ./docker/php72
-      dockerfile: Dockerfile
-    container_name: php72
+  nginx:
+    build: ./nginx
+    ports:
+      - "80:80"  # Porta exposta para o Nginx
     volumes:
-      - ./lara-7.2:/var/www/lara-7.2
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf  # Mapeia a configuração do Nginx
     networks:
-      - app_network
-
-  php82:
-    build:
-      context: ./docker/php82
-      dockerfile: Dockerfile
-    container_name: php82
-    volumes:
-      - ./lara-8.2:/var/www/lara-8.2    
-    networks:
-      - app_network
+      - clientA_network
+    depends_on:
+      - frontend
+      - backend
 
   postgres:
-    image: postgres:15 ##latest
-    container_name: postgres
-    restart: always
+    build: ./postgres
     environment:
-      POSTGRES_USER: root
-      POSTGRES_PASSWORD: 
-      POSTGRES_DB: laravel
-    ports:
-      - "5432:5432"
+      POSTGRES_DB: clientA_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
     volumes:
-      - ./docker/postgres/data:/var/lib/postgresql/data      
+      - ./postgres/data:/var/lib/postgresql/data  # Persiste os dados do PostgreSQL
     networks:
-      - app_network
+      - clientA_network
 
-  vue:
-    build:
-      context: ./frontend
-      dockerfile: ../Docker/vue/Dockerfile
-    container_name: vue
-    ports:
-      - "5173:5173"
-    volumes:
-      - ./vue:/frontend
-    depends_on:
-      - php72
-      - php82
-    networks:
-      - app_network
-    command: ["npm", "run", "dev"]
-
-volumes:
-  postgres_data:
 networks:
-  app_network:
+  clientA_network:
+    driver: bridge
+```
+# Exemplo de docker-compose.yml para ClientB
+```
+version: '3.8'
+
+services:
+  frontend:
+    build: ./frontend
+    ports:
+      - "8082:80"  # Porta exposta para o frontend
+    volumes:
+      - ./frontend/src:/app/src  # Mapeia o código do frontend
+    networks:
+      - clientB_network
+
+  backend:
+    build: ./backend
+    volumes:
+      - ./backend/src:/var/www/html  # Mapeia o código do backend
+    environment:
+      DB_HOST: postgres
+      DB_DATABASE: clientB_db
+      DB_USERNAME: user
+      DB_PASSWORD: password
+    networks:
+      - clientB_network
+    depends_on:
+      - postgres
+
+  nginx:
+    build: ./nginx
+    ports:
+      - "81:80"  # Porta exposta para o Nginx
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf  # Mapeia a configuração do Nginx
+    networks:
+      - clientB_network
+    depends_on:
+      - frontend
+      - backend
+
+  postgres:
+    build: ./postgres
+    environment:
+      POSTGRES_DB: clientB_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    volumes:
+      - ./postgres/data:/var/lib/postgresql/data  # Persiste os dados do PostgreSQL
+    networks:
+      - clientB_network
+
+networks:
+  clientB_network:
     driver: bridge
 ```
 
-# Passo 3: Configurar o PHP (7.2 e 8.2)
-Agora, precisamos criar os arquivos de configuração do PHP.
+# Abordagem híbrida (Recomendado para flexibilidade)
+Você pode combinar as duas abordagens. Por exemplo:
+
+* Use um docker-compose.yml por cliente para projetos que precisam de isolamento.
+* Use um docker-compose.yml central para projetos que compartilham configurações semelhantes.
+
+# Abordagem 2: Um único docker-compose.yml para todos os clientes
+#### Estrutura de Pastas
+```
+meus_projetos_docker/
+|── clientA/
+|   |── frontend/
+|       Dockerfile
+|       /src
+|   |── backend/
+|      Dockerfile
+|      |── src/
+|   |── nginx/
+|      Dockerfile
+|      nginx.conf
+|   |── postgres/
+|      Dockerfile
+|      init.sql
+|------------------------
+|── clientB/
+|   |── frontend/
+|      Dockerfile
+|      |── src/
+|   |── backend/
+|      Dockerfile
+|      |── src/
+|   |── nginx/
+|      Dockerfile
+|      nginx.conf
+|   |── postgres/
+|      Dockerfile
+|      init.sql
+| docker-compose.yml
+```
+
+# Exemplo de `docker-compose.yml` central
+```
+version: '3.8'
+
+services:
+  clientA_frontend:
+    build: ./clients/clientA/frontend
+    ports:
+      - "8081:80"  # Porta exposta para o frontend do ClientA
+    volumes:
+      - ./clients/clientA/frontend/src:/app/src
+    networks:
+      - clientA_network
+
+  clientA_backend:
+    build: ./clients/clientA/backend
+    volumes:
+      - ./clients/clientA/backend/src:/var/www/html
+    environment:
+      DB_HOST: clientA_postgres
+      DB_DATABASE: clientA_db
+      DB_USERNAME: user
+      DB_PASSWORD: password
+    networks:
+      - clientA_network
+    depends_on:
+      - clientA_postgres
+
+  clientA_nginx:
+    build: ./clients/clientA/nginx
+    ports:
+      - "80:80"  # Porta exposta para o Nginx do ClientA
+    volumes:
+      - ./clients/clientA/nginx/nginx.conf:/etc/nginx/nginx.conf
+    networks:
+      - clientA_network
+    depends_on:
+      - clientA_frontend
+      - clientA_backend
+
+  clientA_postgres:
+    build: ./clients/clientA/postgres
+    environment:
+      POSTGRES_DB: clientA_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    volumes:
+      - ./clients/clientA/postgres/data:/var/lib/postgresql/data
+    networks:
+      - clientA_network
+
+  clientB_frontend:
+    build: ./clients/clientB/frontend
+    ports:
+      - "8082:80"  # Porta exposta para o frontend do ClientB
+    volumes:
+      - ./clients/clientB/frontend/src:/app/src
+    networks:
+      - clientB_network
+
+  clientB_backend:
+    build: ./clients/clientB/backend
+    volumes:
+      - ./clients/clientB/backend/src:/var/www/html
+    environment:
+      DB_HOST: clientB_postgres
+      DB_DATABASE: clientB_db
+      DB_USERNAME: user
+      DB_PASSWORD: password
+    networks:
+      - clientB_network
+    depends_on:
+      - clientB_postgres
+
+  clientB_nginx:
+    build: ./clients/clientB/nginx
+    ports:
+      - "81:80"  # Porta exposta para o Nginx do ClientB
+    volumes:
+      - ./clients/clientB/nginx/nginx.conf:/etc/nginx/nginx.conf
+    networks:
+      - clientB_network
+    depends_on:
+      - clientB_frontend
+      - clientB_backend
+
+  clientB_postgres:
+    build: ./clients/clientB/postgres
+    environment:
+      POSTGRES_DB: clientB_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    volumes:
+      - ./clients/clientB/postgres/data:/var/lib/postgresql/data
+    networks:
+      - clientB_network
+
+networks:
+  clientA_network:
+    driver: bridge
+  clientB_network:
+    driver: bridge
+```
+
+# Diferenças entre as abordagens
+### Isolamento:
+* Na abordagem 1, cada cliente tem seu próprio docker-compose.yml, garantindo isolamento total.
+* Na abordagem 2, todos os serviços estão no mesmo arquivo, o que pode levar a conflitos de portas ou redes se não for configurado corretamente.
+
+### Facilidade de gerenciamento:
+* A abordagem 1 é mais fácil de gerenciar individualmente, mas pode resultar em mais arquivos.
+* A abordagem 2 centraliza a configuração, mas pode ficar complexa com muitos clientes.
+
+### Escalabilidade:
+* A abordagem 1 é mais escalável para muitos clientes com requisitos diferentes.
+* A abordagem 2 é mais adequada para projetos semelhantes ou poucos clientes.
+
 
 📌 
-# Criando o Dockerfile para PHP 7.2
-Crie a pasta `docker/php72` e dentro dela um arquivo `Dockerfile`:
+# Dockerfile para o Backend (Laravel)
+Este Dockerfile é para construir a imagem do backend usando PHP e Composer.
 
 ```
-FROM php:7.2-fpm
-RUN apt-get update && apt-get install -y \
-    libpq-dev \
-    zip unzip \
-    && docker-php-ext-install pdo pdo_pgsql
-WORKDIR /var/www/lara-7.2
-COPY . .
-CMD ["php-fpm"]
-
-```
-
-
-📌 
-# Criando o Dockerfile para PHP 8.2
-Crie a pasta `docker/php82` e dentro dela um arquivo `Dockerfile`:
-
-```
+# Usa uma imagem base com PHP e Composer
 FROM php:8.2-fpm
+
+# Instala dependências do sistema
 RUN apt-get update && apt-get install -y \
-    libpq-dev \
-    zip unzip \
-    && docker-php-ext-install pdo pdo_pgsql
-WORKDIR /var/www/lara-8.2
+    git \
+    unzip \
+    libzip-dev \
+    libpng-dev \
+    libonig-dev \
+    libxml2-dev \
+    && docker-php-ext-install pdo_mysql zip mbstring exif pcntl bcmath gd
+
+# Instala o Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# Define o diretório de trabalho
+WORKDIR /var/www/html
+
+# Copia os arquivos do projeto
 COPY . .
+
+# Instala as dependências do Composer
+RUN composer install --optimize-autoloader --no-dev
+
+# Define permissões para o Laravel
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+
+# Expõe a porta 9000 (padrão do PHP-FPM)
+EXPOSE 9000
+
+# Comando para iniciar o PHP-FPM
 CMD ["php-fpm"]
+```
+### Explicação:
+Instala as extensões PHP necessárias para o Laravel.
+
+* Usa o Composer para instalar as dependências do projeto.
+* Define permissões corretas para os diretórios storage e bootstrap/cache.
+* Expõe a porta 9000, que é usada pelo PHP-FPM.
+
+📌
+# Dockerfile para o Nginx
+Este Dockerfile é para construir a imagem do Nginx, que atua como um proxy reverso para o frontend e o backend.
 
 ```
+# Usa a imagem oficial do Nginx
+FROM nginx:alpine
+
+# Copia a configuração personalizada do Nginx
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Expõe a porta 80
+EXPOSE 80
+
+# Comando para iniciar o Nginx
+CMD ["nginx", "-g", "daemon off;"]
+```
+### Explicação:
+* Copia o arquivo de configuração nginx.conf para o contêiner.*
+* Expõe a porta 80, que é usada para servir o tráfego HTTP.
+
+📌
+# Dockerfile para o PostgreSQL
+Este Dockerfile é para construir a imagem do PostgreSQL com um script de inicialização.
+```
+# Usa a imagem oficial do PostgreSQL
+FROM postgres:13
+
+# Copia o script de inicialização do banco de dados
+COPY init.sql /docker-entrypoint-initdb.d/
+
+# Expõe a porta 5432
+EXPOSE 5432
+```
+### Explicação:
+* Copia o arquivo init.sql para o diretório /docker-entrypoint-initdb.d/, que é executado automaticamente quando o contêiner é iniciado.
+* Expõe a porta 5432, que é usada pelo PostgreSQL.
+
+
+
+
 
 📌 
 # Criando o Dockerfile para Vue.js
