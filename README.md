@@ -53,35 +53,35 @@ Desvantagens:
 ```
 meus_projetos_docker/
 │── clientA/
-|   docker-compose.yml
+|   | docker-compose.yml
 |   │── frontend/
-|     Dockerfile
-|     nginx.conf
-|     │── src/
+|   |   | Dockerfile
+|   |   | nginx.conf
+|   |   │── src/
 |   │── backend/
-|     Dockerfile
-|     │── src/
+|   |   | Dockerfile
+|   |   │── src/
 |   │── nginx/
-|     Dockerfile
-|     nginx.conf
+|   |   | Dockerfile
+|   |   | nginx.conf
 |   │── postgres/
-|     Dockerfile
-|     init.sql
+|   |   | Dockerfile
+|   |   | init.sql
 |-----------------------
 │── clientB/
-|   docker-compose.yml
+|   | docker-compose.yml
 |   │── frontend/
-|     Dockerfile
-|     │── src/
+|   |   | Dockerfile
+|   |   │── src/
 |   │── backend/
-|     Dockerfile
-|     │── src/
+|   |   | Dockerfile
+|   |   │── src/
 |   │── nginx/
-|     Dockerfile
-|     nginx.conf
+|   |   | Dockerfile
+|   |   | nginx.conf
 |   │── postgres/
-|     Dockerfile
-|     init.sql
+|   |   | Dockerfile
+|   |   | init.sql
 ```
 
 # Passo 2: Criar o `docker-compose.yml` para ClientA
@@ -95,35 +95,30 @@ version: '3.8'
 services:
   frontend:
     build: ./frontend
-    ports:
-      - "8081:80"  # Porta exposta para o frontend
-    volumes:
-      - ./frontend/src:/app/src  # Mapeia o código do frontend
     networks:
       - clientA_network
 
   backend:
     build: ./backend
-    volumes:
-      - ./backend/src:/var/www/html  # Mapeia o código do backend
+    networks:
+      - clientA_network
     environment:
       DB_HOST: postgres
       DB_DATABASE: clientA_db
       DB_USERNAME: user
       DB_PASSWORD: password
-    networks:
-      - clientA_network
     depends_on:
       - postgres
 
   nginx:
     build: ./nginx
     ports:
-      - "80:80"  # Porta exposta para o Nginx
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf  # Mapeia a configuração do Nginx
+      - "8080:80"
     networks:
       - clientA_network
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./backend:/var/www/html
     depends_on:
       - frontend
       - backend
@@ -135,67 +130,12 @@ services:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
     volumes:
-      - ./postgres/data:/var/lib/postgresql/data  # Persiste os dados do PostgreSQL
+      - ./postgres/data:/var/lib/postgresql/data
     networks:
       - clientA_network
 
 networks:
   clientA_network:
-    driver: bridge
-```
-# Exemplo de docker-compose.yml para ClientB
-```
-version: '3.8'
-
-services:
-  frontend:
-    build: ./frontend
-    ports:
-      - "8082:80"  # Porta exposta para o frontend
-    volumes:
-      - ./frontend/src:/app/src  # Mapeia o código do frontend
-    networks:
-      - clientB_network
-
-  backend:
-    build: ./backend
-    volumes:
-      - ./backend/src:/var/www/html  # Mapeia o código do backend
-    environment:
-      DB_HOST: postgres
-      DB_DATABASE: clientB_db
-      DB_USERNAME: user
-      DB_PASSWORD: password
-    networks:
-      - clientB_network
-    depends_on:
-      - postgres
-
-  nginx:
-    build: ./nginx
-    ports:
-      - "81:80"  # Porta exposta para o Nginx
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf  # Mapeia a configuração do Nginx
-    networks:
-      - clientB_network
-    depends_on:
-      - frontend
-      - backend
-
-  postgres:
-    build: ./postgres
-    environment:
-      POSTGRES_DB: clientB_db
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-    volumes:
-      - ./postgres/data:/var/lib/postgresql/data  # Persiste os dados do PostgreSQL
-    networks:
-      - clientB_network
-
-networks:
-  clientB_network:
     driver: bridge
 ```
 
@@ -429,7 +369,7 @@ CMD ["nginx", "-g", "daemon off;"]
 Este Dockerfile é para construir a imagem do PostgreSQL com um script de inicialização.
 ```
 # Usa a imagem oficial do PostgreSQL
-FROM postgres:13
+FROM postgres:14
 
 # Copia o script de inicialização do banco de dados
 COPY init.sql /docker-entrypoint-initdb.d/
@@ -450,13 +390,19 @@ EXPOSE 5432
 Crie a pasta `docker/vue` e dentro dela um arquivo `Dockerfile`:
 
 ```
-FROM node:18
+FROM node:20 as build-stage
 WORKDIR /app
-COPY package.json package-lock.json ./
+COPY package*.json ./
 RUN npm install
 COPY . .
-EXPOSE 5173
-CMD ["npm", "run", "dev"]
+RUN npm run build
+
+# Estágio de produção: Serve os arquivos estáticos com Nginx
+FROM nginx:alpine as production-stage
+COPY --from=build-stage /app/dist /usr/share/nginx/html
+COPY ./nginx.conf /etc/nginx/conf.d/default.conf
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
 ```
 
 # Passo 4: Configurar o Nginx
@@ -466,37 +412,33 @@ Crie a pasta `docker/nginx/` e dentro dela um arquivo `nginx.conf`:
 server {
     listen 80;
     server_name localhost;
-    location /lara-7.2 {
-        root /var/www/lara-7.2/public;
-        index index.php index.html index.htm;
-        try_files $uri $uri/ /index.php?$query_string;
 
-        location ~ \.php$ {
-            include fastcgi_params;
-            fastcgi_pass php72:9000;
-            fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
-        }
-    }
-
-    location /lara-8.2 {
-        root /var/www/lara-8.2/public;
-        index index.php index.html index.htm;
-        try_files $uri $uri/ /index.php?$query_string;
-
-        location ~ \.php$ {
-            include fastcgi_params;
-            fastcgi_pass php82:9000;
-            fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
-        }
-    }
-
+    # Frontend (Vue.js)
     location / {
-        root /app;
-        index index.html;
-        try_files $uri /index.html;
+        proxy_pass http://frontend:80;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /api {
+        try_files $uri $uri/ /api/index.php?$query_string;  # Corrigindo a lógica do try_files
+    }
+
+    location ~ \.php$ {
+        fastcgi_pass backend:9000;
+        fastcgi_index index.php;
+        fastcgi_param SCRIPT_FILENAME /var/www/html/public$fastcgi_script_name;  # Ajustando o caminho para o script PHP
+        include fastcgi_params;
+    }
+
+    # Configuração de erro
+    error_page 500 502 503 504 /50x.html;
+    location = /50x.html {
+        root /usr/share/nginx/html;
     }
 }
-
 ```
 
 # Passo 5: Subir os Containers
@@ -556,60 +498,60 @@ Agora você tem:
 # ALGUNS COMANDOS DOKER
 
 ### Imagens
-`docker images`: Lista todas as imagens locais.
-`docker pull <imagem>`: Baixa uma imagem do Docker Hub.
-`docker rmi <imagem>`: Remove uma imagem local.
-`docker build -t <nome_da_imagem>` .: Constrói uma imagem a partir de um Dockerfile.
++ `docker images`: Lista todas as imagens locais.
++ `docker pull <imagem>`: Baixa uma imagem do Docker Hub.
++ `docker rmi <imagem>`: Remove uma imagem local.
++ `docker build -t <nome_da_imagem>` .: Constrói uma imagem a partir de um Dockerfile.
 
 ### Contêineres
-`docker ps`: Lista contêineres em execução.
-`docker ps -a`: Lista todos os contêineres (em execução e parados).
-`docker run <imagem>`: Executa um contêiner a partir de uma imagem.
-`docker start <contêiner>`: Inicia um contêiner parado.
-`docker stop <contêiner>`: Para um contêiner em execução.
-`docker restart <contêiner>`: Reinicia um contêiner.
-`docker rm <contêiner>`: Remove um contêiner.
-`docker exec -it <contêiner> <comando>`: Executa um comando dentro de um contêiner em execução.
-`docker logs <contêiner>`: Exibe os logs de um contêiner.
++ `docker ps`: Lista contêineres em execução.
++ `docker ps -a`: Lista todos os contêineres (em execução e parados).
++ `docker run <imagem>`: Executa um contêiner a partir de uma imagem.
++ `docker start <contêiner>`: Inicia um contêiner parado.
++ `docker stop <contêiner>`: Para um contêiner em execução.
++ `docker restart <contêiner>`: Reinicia um contêiner.
++ `docker rm <contêiner>`: Remove um contêiner.
++ `docker exec -it <contêiner> <comando>`: Executa um comando dentro de um contêiner em execução.
++ `docker logs <contêiner>`: Exibe os logs de um contêiner.
 
 ### Redes
-`docker network ls`: Lista todas as redes.
-`docker network create <nome_da_rede>`: Cria uma nova rede.
-`docker network inspect <rede>`: Exibe detalhes de uma rede.
++ `docker network ls`: Lista todas as redes.
++ `docker network create <nome_da_rede>`: Cria uma nova rede.
++ `docker network inspect <rede>`: Exibe detalhes de uma rede.
 
 ### Volumes
-`docker volume ls`: Lista todos os volumes.
-`docker volume create <nome_do_volume>`: Cria um novo volume.
-`docker volume inspect <volume>`: Exibe detalhes de um volume.
++ `docker volume ls`: Lista todos os volumes.
++ `docker volume create <nome_do_volume>`: Cria um novo volume.
++ `docker volume inspect <volume>`: Exibe detalhes de um volume.
 
 ### Sistema
-`docker info`: Exibe informações sobre o Docker.
-`docker version`: Exibe a versão do Docker.
-`docker system prune`: Remove todos os contêineres, redes e imagens não utilizadas.
++ `docker info`: Exibe informações sobre o Docker.
++ `docker version`: Exibe a versão do Docker.
++ `docker system prune`: Remove todos os contêineres, redes e imagens não utilizadas.
 
 # Comandos Docker Compose
 ### Execução
-`docker-compose up`: Inicia todos os serviços definidos no docker-compose.yml.
-`docker-compose up -d`: Inicia os serviços em segundo plano (detached mode).
-`docker-compose down`: Para e remove todos os contêineres, redes e volumes definidos no docker-compose.yml.
-`docker-compose start`: Inicia os serviços.
-`docker-compose stop`: Para os serviços.
-`docker-compose restart`: Reinicia os serviços.
++ `docker-compose up`: Inicia todos os serviços definidos no docker-compose.yml.
++ `docker-compose up -d`: Inicia os serviços em segundo plano (detached mode).
++ `docker-compose down`: Para e remove todos os contêineres, redes e volumes definidos no docker-compose.yml.
++ `docker-compose start`: Inicia os serviços.
++ `docker-compose stop`: Para os serviços.
++ `docker-compose restart`: Reinicia os serviços.
 
 ### Logs e Status
-`docker-compose logs`: Exibe os logs dos serviços.
-`docker-compose ps`: Lista os contêineres dos serviços.
-`docker-compose top`: Exibe os processos em execução nos contêineres.
++ `docker-compose logs`: Exibe os logs dos serviços.
++ `docker-compose ps`: Lista os contêineres dos serviços.
++ `docker-compose top`: Exibe os processos em execução nos contêineres.
 
 ### Execução de Comandos
-`docker-compose exec <serviço> <comando>`: Executa um comando dentro de um contêiner de um serviço.
++ `docker-compose exec <serviço> <comando>`: Executa um comando dentro de um contêiner de um serviço.
 
 ### Build e Imagens
-`docker-compose build`: Constrói ou reconstrói as imagens dos serviços.
-`docker-compose pull`: Baixa as imagens dos serviços.
++ `docker-compose build`: Constrói ou reconstrói as imagens dos serviços.
++ `docker-compose pull`: Baixa as imagens dos serviços.
 
 ### Configuração
-`docker-compose config`: Valida e exibe a configuração do docker-compose.yml.
++ `docker-compose config`: Valida e exibe a configuração do docker-compose.yml.
 
 Esses são os comandos mais comuns e úteis para trabalhar com Docker e Docker Compose. Eles cobrem a maioria das operações 
 diárias que você pode precisar realizar ao gerenciar contêineres e serviços.
