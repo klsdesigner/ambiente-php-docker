@@ -24,7 +24,7 @@ Vou gerar um docker-compose.yml e as configurações necessárias. Você quer qu
 Crie uma pasta para o seu ambiente de desenvolvimento:
 
 #### bash
-```
+```shell
 mkdir meu_projeto_docker                # cria uma pasta
 cd meu_projeto_docker                   # entra na pasta
 
@@ -89,7 +89,7 @@ Este arquivo define todos os serviços (containers) que vamos rodar.
 
 Crie um arquivo `docker-compose.yml` na raiz do projeto:
 
-```
+```shell
 version: '3.8'
 
 services:
@@ -180,7 +180,7 @@ meus_projetos_docker/
 ```
 
 # Exemplo de `docker-compose.yml` central
-```
+```shell
 version: '3.8'
 
 services:
@@ -301,7 +301,7 @@ networks:
 # Dockerfile para o Backend (Laravel)
 Este Dockerfile é para construir a imagem do backend usando PHP e Composer.
 
-```
+```shell
 # Usa uma imagem base com PHP e Composer
 FROM php:8.2-fpm
 
@@ -347,7 +347,7 @@ Instala as extensões PHP necessárias para o Laravel.
 # Dockerfile para o Nginx
 Este Dockerfile é para construir a imagem do Nginx, que atua como um proxy reverso para o frontend e o backend.
 
-```
+```shell
 # Usa a imagem oficial do Nginx
 FROM nginx:alpine
 
@@ -367,7 +367,7 @@ CMD ["nginx", "-g", "daemon off;"]
 📌
 # Dockerfile para o PostgreSQL
 Este Dockerfile é para construir a imagem do PostgreSQL com um script de inicialização.
-```
+```shell
 # Usa a imagem oficial do PostgreSQL
 FROM postgres:14
 
@@ -389,7 +389,7 @@ EXPOSE 5432
 # Criando o Dockerfile para Vue.js
 Crie a pasta `docker/vue` e dentro dela um arquivo `Dockerfile`:
 
-```
+```shell
 FROM node:20 as build-stage
 WORKDIR /app
 COPY package*.json ./
@@ -408,7 +408,7 @@ CMD ["nginx", "-g", "daemon off;"]
 # Passo 4: Configurar o Nginx
 Crie a pasta `docker/nginx/` e dentro dela um arquivo `nginx.conf`:
 
-```
+```shell
 server {
     listen 80;
     server_name localhost;
@@ -445,7 +445,7 @@ server {
 Agora que tudo está configurado, suba os containers:
 
 bash
-```
+```shell
 docker-compose up -d --build
 ```
 Isso irá:
@@ -470,7 +470,7 @@ Depois que os containers estiverem rodando:
 Dentro do container PHP, rode os seguintes comandos para cada versão do Laravel:
 
 bash
-```
+```shell
 docker exec -it php72 bash
 composer install
 php artisan migrate --seed
@@ -478,7 +478,7 @@ php artisan serve
 ```
 
 bash
-```
+```shell
 docker exec -it php82 bash
 composer install
 php artisan migrate --seed
