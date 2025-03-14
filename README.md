@@ -25,8 +25,10 @@ Crie uma pasta para o seu ambiente de desenvolvimento:
 
 #### bash
 ```
-mkdir meu_projeto_docker
-cd meu_projeto_docker
+mkdir meu_projeto_docker                # cria uma pasta
+cd meu_projeto_docker                   # entra na pasta
+
+rmdir /s /q "C:\caminho\para\a\pasta"   # deleta uma pasta 
 ```
 Dentro dessa pasta, vamos organizar os arquivos:
 
@@ -550,61 +552,67 @@ Agora você tem:
 * ✅ PostgreSQL armazenando os dados
 * ✅ Vue.js rodando no frontend
 
+
 # ALGUNS COMANDOS DOKER
 
-Faça login em um registro (como o Docker Hub) a partir do CLI. Isso salva credenciais localmente.
-```
-docker login
-docker login -u myusername
-```
+### Imagens
+`docker images`: Lista todas as imagens locais.
+`docker pull <imagem>`: Baixa uma imagem do Docker Hub.
+`docker rmi <imagem>`: Remove uma imagem local.
+`docker build -t <nome_da_imagem>` .: Constrói uma imagem a partir de um Dockerfile.
 
-### Para Docker Hub
-```
-docker push myuser/myimage:v1   # Enviar imagem personalizada para Docker Hub
-docker pull someimage           # Puxar imagem compartilhada
-docker images                   # Listar imagens baixadas
-docker rmi <image>              # Remover/apagar imagem
-```
+### Contêineres
+`docker ps`: Lista contêineres em execução.
+`docker ps -a`: Lista todos os contêineres (em execução e parados).
+`docker run <imagem>`: Executa um contêiner a partir de uma imagem.
+`docker start <contêiner>`: Inicia um contêiner parado.
+`docker stop <contêiner>`: Para um contêiner em execução.
+`docker restart <contêiner>`: Reinicia um contêiner.
+`docker rm <contêiner>`: Remove um contêiner.
+`docker exec -it <contêiner> <comando>`: Executa um comando dentro de um contêiner em execução.
+`docker logs <contêiner>`: Exibe os logs de um contêiner.
 
-### No Docker
-```
-docker version
-docker --help
-```
+### Redes
+`docker network ls`: Lista todas as redes.
+`docker network create <nome_da_rede>`: Cria uma nova rede.
+`docker network inspect <rede>`: Exibe detalhes de uma rede.
 
-```
-docker run        # Iniciar novo contêiner a partir da imagem
-docker ps         # Listar contêineres em execução
-docker logs       # Imprimir logs do contêiner
-docker stop       # Parar de executar o contêiner
-docker rm         # Remover/excluir contêiner
-```
+### Volumes
+`docker volume ls`: Lista todos os volumes.
+`docker volume create <nome_do_volume>`: Cria um novo volume.
+`docker volume inspect <volume>`: Exibe detalhes de um volume.
 
-Cria uma imagem Docker lendo instruções de construção de um Dockerfile.
-```
-docker build                         # Construir imagem a partir do Dockerfile
-docker build --platform=linux/amd64  # Construir para arquitetura específica
-```
+### Sistema
+`docker info`: Exibe informações sobre o Docker.
+`docker version`: Exibe a versão do Docker.
+`docker system prune`: Remove todos os contêineres, redes e imagens não utilizadas.
 
-Cria um volume persistente e gerenciado que pode sobreviver aos contêineres. docker run -v- Monta um volume em um contêiner 
-específico para permitir a persistência de dados após o ciclo de vida do contêiner.
-```
-docker volume create         # Criar volume
-docker run -v <vol>:/data    # Montar volume no contêiner
-```
+# Comandos Docker Compose
+### Execução
+`docker-compose up`: Inicia todos os serviços definidos no docker-compose.yml.
+`docker-compose up -d`: Inicia os serviços em segundo plano (detached mode).
+`docker-compose down`: Para e remove todos os contêineres, redes e volumes definidos no docker-compose.yml.
+`docker-compose start`: Inicia os serviços.
+`docker-compose stop`: Para os serviços.
+`docker-compose restart`: Reinicia os serviços.
 
-Cria uma rede virtual personalizada para comunicação de contêineres. docker run --network=<name>- Conecta um contêiner em 
-execução a uma rede definida pelo usuário do Docker.
-```
-docker network create           # Criar rede definida pelo usuário
-docker run --network=<name>     # Conectar contêiner
-```
+### Logs e Status
+`docker-compose logs`: Exibe os logs dos serviços.
+`docker-compose ps`: Lista os contêineres dos serviços.
+`docker-compose top`: Exibe os processos em execução nos contêineres.
 
-Executa um comando em um contêiner já em execução. Útil para depurar/inspecionar contêineres:
-```
-docker exec
-docker exec mycontainer ls -l /etc     # Listar arquivos no contêiner
-```
+### Execução de Comandos
+`docker-compose exec <serviço> <comando>`: Executa um comando dentro de um contêiner de um serviço.
+
+### Build e Imagens
+`docker-compose build`: Constrói ou reconstrói as imagens dos serviços.
+`docker-compose pull`: Baixa as imagens dos serviços.
+
+### Configuração
+`docker-compose config`: Valida e exibe a configuração do docker-compose.yml.
+
+Esses são os comandos mais comuns e úteis para trabalhar com Docker e Docker Compose. Eles cobrem a maioria das operações 
+diárias que você pode precisar realizar ao gerenciar contêineres e serviços.
 
 
 
