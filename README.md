@@ -151,31 +151,31 @@ Você pode combinar as duas abordagens. Por exemplo:
 meus_projetos_docker/
 |── clientA/
 |   |── frontend/
-|       Dockerfile
-|       /src
+|   |   | Dockerfile
+|   |   |── src/
 |   |── backend/
-|      Dockerfile
-|      |── src/
+|   |   Dockerfile
+|   |   |── src/
 |   |── nginx/
-|      Dockerfile
-|      nginx.conf
+|   |   | Dockerfile
+|   |   | nginx.conf
 |   |── postgres/
-|      Dockerfile
-|      init.sql
+|   |   | Dockerfile
+|   |   | init.sql
 |------------------------
 |── clientB/
 |   |── frontend/
-|      Dockerfile
-|      |── src/
+|   |   | Dockerfile
+|   |   |── src/
 |   |── backend/
-|      Dockerfile
-|      |── src/
+|   |   | Dockerfile
+|   |   |── src/
 |   |── nginx/
-|      Dockerfile
-|      nginx.conf
+|   |   | Dockerfile
+|   |   | nginx.conf
 |   |── postgres/
-|      Dockerfile
-|      init.sql
+|   |   | Dockerfile
+|   |   | init.sql
 | docker-compose.yml
 ```
 
