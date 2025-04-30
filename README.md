@@ -263,6 +263,16 @@ Isso irá:
 # Passo 6: Acessar a Aplicação
 Depois que os containers estiverem rodando:
 
+no bash
+Entrar no container do laravel, depois no diretório e execulta a migrate
+```
+docker exec -it klsLaravel bash
+cd /var/www/html/backend
+php artisan migrate
+exit
+
+```
+
 * Laravel rodando em PHP 8.2:
 ```
 👉 http://localhost:8080
