@@ -1,0 +1,61 @@
+# version: "3.9"
+# INICIA OS SERVIÇOS ##########################################################
+services:
+
+    # IMAGE DO BANCO DE DADOS #################################################
+    postgres:
+        image: postgres:14
+        restart: always
+        container_name: klsPostgres
+        volumes:
+            - ./postgres_data:/var/lib/postgresql/data
+        environment:
+            POSTGRES_DB: laravel_db
+            POSTGRES_USER: root
+            POSTGRES_PASSWORD: secret # Recomendo adicionar senha
+        ports:
+            - "5432:5432"
+        networks:
+            - laravel
+
+    # IMAGE DO NGINX ###########################################################
+    nginx:
+        image: nginx:latest
+        restart: always
+        container_name: klsNginx
+        ports:
+            - "8080:80"
+            # - "443:443"
+        volumes:
+            - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+            - ./backend:/var/www/backend
+        networks:
+            - laravel
+
+    # IMAGE DO LARAVEL 11 #######################################################
+    backend:
+        build:
+            context: ./backend
+        restart: always
+        container_name: klsLaravel  
+        working_dir: /var/www/backend
+        volumes:
+            - ./backend:/var/www/backend
+        networks:
+            - laravel
+        depends_on:
+            - postgres
+            - nginx 
+            - redis
+
+    # IMAGE DO REDIS #############################################################
+    redis:
+        image: redis:latest
+        restart: always
+        container_name: klsRedis
+        networks:
+            - laravel           
+
+networks:
+    laravel:
+        driver: bridge
