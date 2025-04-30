@@ -24,8 +24,7 @@ services:
         restart: always
         container_name: klsNginx
         ports:
-            - "8080:80"
-            # - "443:443"
+            - "8080:80"            
         volumes:
             - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
             - ./backend:/var/www/backend
@@ -36,6 +35,10 @@ services:
     backend:
         build:
             context: ./backend
+            dockerfile: Dockerfile
+            args:
+                user: laraDocker
+                uid: '1000'
         restart: always
         container_name: klsLaravel  
         working_dir: /var/www/backend
@@ -47,6 +50,14 @@ services:
             - postgres
             - nginx 
             - redis
+        environment:
+            DB_CONNECTION: pgsql
+            DB_HOST: postgres
+            DB_PORT: 5432
+            DB_DATABASE: laravel_db
+            DB_USERNAME: root
+            DB_PASSWORD: secret 
+
 
     # IMAGE DO REDIS #############################################################
     redis:
