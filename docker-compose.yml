@@ -73,7 +73,9 @@ services:
             - laravel
         depends_on:
             - backend
-            
+        ports:
+            - "3000:3000" # Porta do Vue.jS
+
 
     # IMAGE DO REDIS #############################################################
     redis:
