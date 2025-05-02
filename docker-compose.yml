@@ -59,6 +59,22 @@ services:
             DB_PASSWORD: secret 
 
 
+    # IMAGE DO vuejs #############################################################
+    frontend:
+        build:
+            context: ./frontend
+            dockerfile: Dockerfile
+        restart: always
+        container_name: klsVuejs
+        working_dir: /var/www/frontend
+        volumes:
+            - ./frontend:/var/www/frontend
+        networks:
+            - laravel
+        depends_on:
+            - backend
+            
+
     # IMAGE DO REDIS #############################################################
     redis:
         image: redis:latest
