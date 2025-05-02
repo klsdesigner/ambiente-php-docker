@@ -53,16 +53,16 @@ Desvantagens:
 ```
 myAmbiente/
 │── frontend/
-|   | vueJs
-|   | Dockerfile
-|   |
+|   |── gitignore
+|   |── Dockerfile
 |── backend/
-|   | Laravel
-|   | Dockerfile
+|   |── gitignore
+|   |── Dockerfile
 |── nginx/
-|   | nginx.conf
-|── postgres/
-|   docker-compose.yml
+|   |── nginx.conf
+|── postgres_data/
+|── .gitignore
+|── docker-compose.yml
 ```
 
 # Passo 2: Criar o `docker-compose.yml` na raiz do projeto:
@@ -75,7 +75,7 @@ Este arquivo define todos os serviços (containers) que vamos rodar.
 # INICIA OS SERVIÇOS ##########################################################
 services:
 
-    # IMAGE DO BANCO DE DADOS #################################################
+    # SERVIÇO DO BANCO DE DADOS #################################################
     postgres:
         image: postgres:14
         restart: always
@@ -91,7 +91,7 @@ services:
         networks:
             - laravel
 
-    # IMAGE DO NGINX ###########################################################
+    # SERVIÇO DO NGINX ###########################################################
     nginx:
         image: nginx:latest
         restart: always
@@ -104,7 +104,7 @@ services:
         networks:
             - laravel
 
-    # IMAGE DO LARAVEL 11 #######################################################
+    # SERVIÇO DO LARAVEL 11 #######################################################
     backend:
         build:
             context: ./backend
@@ -131,8 +131,24 @@ services:
             DB_USERNAME: root
             DB_PASSWORD: secret 
 
+    # SERVIÇO DO vuejs #############################################################
+    frontend:
+        build:
+            context: ./frontend
+            dockerfile: Dockerfile
+        restart: always
+        container_name: klsVuejs
+        working_dir: /var/www/frontend
+        volumes:
+            - ./frontend:/var/www/frontend
+        networks:
+            - laravel
+        depends_on:
+            - backend
+        ports:
+            - "3000:3000" # Porta do Vue.jS
 
-    # IMAGE DO REDIS #############################################################
+    # SERVIÇO DO REDIS #############################################################
     redis:
         image: redis:latest
         restart: always
