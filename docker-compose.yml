@@ -66,9 +66,9 @@ services:
             dockerfile: Dockerfile
         restart: always
         container_name: klsVuejs
-        working_dir: /var/www/frontend
+        working_dir: /frontend
         volumes:
-            - ./frontend:/var/www/frontend
+            - ./frontend:/frontend
         networks:
             - laravel
         depends_on:
