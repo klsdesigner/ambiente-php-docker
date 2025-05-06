@@ -115,13 +115,16 @@ services:
         working_dir: /frontend
         volumes:
             - ./frontend:/frontend
+            - /frontend/node_modules
         networks:
             - laravel
         depends_on:
             - backend
         ports:
-            - "3000:3000" # Porta do Vue.jS
-
+            - "5173:5173" # Porta do Vue.jS
+        environment:
+            NODE_ENV: development
+            CHOKIDAR_USEPOLLING: true
 
     # IMAGE DO REDIS #############################################################
     redis:

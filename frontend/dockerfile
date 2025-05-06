@@ -1,19 +1,21 @@
-FROM node:lts-alpine
-
-RUN npm install -g http-server  
-#npm@latest
+FROM node:18.16.0
 
 WORKDIR /frontend
 
+# Instala as dependências globais primeiro
+RUN npm install -g vite@latest
+
+# Copia os arquivos de dependência
 COPY package*.json ./
 
-RUN npm install
+# Limpa cache e reinstala dependências
+RUN rm -rf node_modules package-lock.json && \
+    npm install --force && \
+    npm cache clean --force
 
+# Copia o restante do código
 COPY . .
 
-RUN npm run build
+EXPOSE 5173
 
-EXPOSE 8080
-
-#CMD [ "npm", "run", "dev", "--host", "0.0.0.0" ]
-CMD [ "http-server", "dist" ]
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
