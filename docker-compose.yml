@@ -18,6 +18,53 @@ services:
         networks:
             - laravel
 
+# IMAGE PARA PGADMIN ##########################################################
+      # pgadmin:
+      # container_name: setup-pgadmin4
+      # image: dpage/pgadmin4
+      # restart: always
+      # environment:
+      #   PGADMIN_DEFAULT_EMAIL: "admin@admin.com"
+      #   PGADMIN_DEFAULT_PASSWORD: "123456"
+      # ports:
+      #   - "5050:80"
+      # networks:
+      #   - setup-network        
+
+    # IMAGE DO MYSQL ###########################################################
+#   mysql:
+#     container_name: setup-mysql
+#     image: mysql:8.0
+#     command: --default-authentication-plugin=mysql_native_password
+#     restart: always
+#     tty: true
+#     volumes:
+#       - setup-data:/var/lib/mysql/
+#       - ./docker/mysql/my.cnf:/etc/mysql/my.cnf
+#     networks:
+#       - setup-network
+#     ports:
+#       - '3306:3306'
+#     environment:
+#       MYSQL_DATABASE: zyonbank
+#       MYSQL_ROOT_PASSWORD: root
+#       MYSQL_USER: zyonbank
+#       MYSQL_PASSWORD: zyonbank2024
+
+# IMAGE PARA PHPMYADMIN #########################################################
+#   phpmyadmin:
+#     container_name: setup-phpmyadmin
+#     image: phpmyadmin:5.2
+#     restart: always
+#     ports:
+#       - '8888:80'
+#     networks:
+#       - setup-network
+#     environment:
+#       PMA_HOST: setup-mysql
+#     depends_on:
+#       - mysql
+
     # IMAGE DO NGINX ###########################################################
     nginx:
         image: nginx:latest
@@ -57,7 +104,6 @@ services:
             DB_DATABASE: laravel_db
             DB_USERNAME: root
             DB_PASSWORD: secret 
-
 
     # IMAGE DO vuejs #############################################################
     frontend:

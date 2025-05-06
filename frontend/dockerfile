@@ -13,7 +13,7 @@ COPY . .
 
 RUN npm run build
 
-EXPOSE port 8080
+EXPOSE 8080
 
 #CMD [ "npm", "run", "dev", "--host", "0.0.0.0" ]
-CMD [ "http-server", dist ]
+CMD [ "http-server", "dist" ]
