@@ -1,4 +1,4 @@
-# AMBIENTE LARAVEL(php) COM DOCKER
+# AMBIENTE LARAVEL(php) e VUE.js COM DOCKER
 Passos para criar container de ambiente de desenvolvimento php
 
 ## Servidor Web (Nginx vs Apache):
