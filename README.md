@@ -70,12 +70,11 @@ Este arquivo define todos os serviços (containers) que vamos rodar.
 
 
 ```shell
-# version: "3.9" 
-
+# version: "3.9"
 # INICIA OS SERVIÇOS ##########################################################
 services:
 
-    # SERVIÇO DO BANCO DE DADOS #################################################
+    # IMAGE DO BANCO DE DADOS #################################################
     postgres:
         image: postgres:14
         restart: always
@@ -91,7 +90,54 @@ services:
         networks:
             - laravel
 
-    # SERVIÇO DO NGINX ###########################################################
+# IMAGE PARA PGADMIN ##########################################################
+      # pgadmin:
+      # container_name: setup-pgadmin4
+      # image: dpage/pgadmin4
+      # restart: always
+      # environment:
+      #   PGADMIN_DEFAULT_EMAIL: "admin@admin.com"
+      #   PGADMIN_DEFAULT_PASSWORD: "123456"
+      # ports:
+      #   - "5050:80"
+      # networks:
+      #   - setup-network        
+
+    # IMAGE DO MYSQL ###########################################################
+#   mysql:
+#     container_name: setup-mysql
+#     image: mysql:8.0
+#     command: --default-authentication-plugin=mysql_native_password
+#     restart: always
+#     tty: true
+#     volumes:
+#       - setup-data:/var/lib/mysql/
+#       - ./docker/mysql/my.cnf:/etc/mysql/my.cnf
+#     networks:
+#       - setup-network
+#     ports:
+#       - '3306:3306'
+#     environment:
+#       MYSQL_DATABASE: zyonbank
+#       MYSQL_ROOT_PASSWORD: root
+#       MYSQL_USER: zyonbank
+#       MYSQL_PASSWORD: zyonbank2024
+
+# IMAGE PARA PHPMYADMIN #########################################################
+#   phpmyadmin:
+#     container_name: setup-phpmyadmin
+#     image: phpmyadmin:5.2
+#     restart: always
+#     ports:
+#       - '8888:80'
+#     networks:
+#       - setup-network
+#     environment:
+#       PMA_HOST: setup-mysql
+#     depends_on:
+#       - mysql
+
+    # IMAGE DO NGINX ###########################################################
     nginx:
         image: nginx:latest
         restart: always
@@ -104,7 +150,7 @@ services:
         networks:
             - laravel
 
-    # SERVIÇO DO LARAVEL 11 #######################################################
+    # IMAGE DO LARAVEL 11 #######################################################
     backend:
         build:
             context: ./backend
@@ -131,24 +177,28 @@ services:
             DB_USERNAME: root
             DB_PASSWORD: secret 
 
-    # SERVIÇO DO vuejs #############################################################
+    # IMAGE DO vuejs #############################################################
     frontend:
         build:
             context: ./frontend
             dockerfile: Dockerfile
         restart: always
         container_name: klsVuejs
-        working_dir: /var/www/frontend
+        working_dir: /frontend
         volumes:
-            - ./frontend:/var/www/frontend
+            - ./frontend:/frontend
+            - /frontend/node_modules
         networks:
             - laravel
         depends_on:
             - backend
         ports:
-            - "3000:3000" # Porta do Vue.jS
+            - "5173:5173" # Porta do Vue.jS
+        environment:
+            NODE_ENV: development
+            CHOKIDAR_USEPOLLING: true
 
-    # SERVIÇO DO REDIS #############################################################
+    # IMAGE DO REDIS #############################################################
     redis:
         image: redis:latest
         restart: always
@@ -167,10 +217,8 @@ Este Dockerfile é para construir a imagem do backend usando PHP e Composer.
 
 ```shell
 FROM php:8.3-fpm
-
 ARG user
 ARG uid
-
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     curl \
@@ -188,18 +236,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
-
 # Criando um usuário administrador para acessar o git, Composer e Artisan
 RUN useradd -G www-data,root -u $uid -d /home/$user $user && \
     mkdir -p /home/$user/.composer && \
     chown -R $user:$user /home/$user
-
 WORKDIR /var/www/backend
-
 COPY .env . 
-
 USER $user
-
 CMD [ "php-fpm" ]    
 ```
 ### Explicação:
@@ -215,19 +258,16 @@ Instala as extensões PHP necessárias para o Laravel.
 Crie a pasta `docker/vue` e dentro dela um arquivo `Dockerfile`:
 
 ```shell
-FROM node:20 as build-stage
-WORKDIR /app
+FROM node:18.16.0
+WORKDIR /frontend
+RUN npm install -g vite@latest
 COPY package*.json ./
-RUN npm install
+RUN rm -rf node_modules package-lock.json && \
+    npm install --force && \
+    npm cache clean --force
 COPY . .
-RUN npm run build
-
-# Estágio de produção: Serve os arquivos estáticos com Nginx
-FROM nginx:alpine as production-stage
-COPY --from=build-stage /app/dist /usr/share/nginx/html
-COPY ./nginx.conf /etc/nginx/conf.d/default.conf
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+EXPOSE 5173
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
 ```
 
 # Passo 4: Configurar o Nginx
