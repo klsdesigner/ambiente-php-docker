@@ -103,7 +103,7 @@ services:
             DB_PORT: 5432
             DB_DATABASE: laravel_db
             DB_USERNAME: root
-            DB_PASSWORD: secret 
+            DB_PASSWORD: secret        
 
     # IMAGE DO vuejs #############################################################
     frontend:
