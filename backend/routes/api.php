@@ -11,7 +11,7 @@ Route::prefix('v1')->group(function () {
         return response()->json([
             'status' => 'success',
             'version' => 'v1',
-            'baseUrl' => 'http://localhost:9000/api/v1',
+            'baseUrl' => 'http://localhost:8080/api/v1',
         ], 200);
     }); 
 
